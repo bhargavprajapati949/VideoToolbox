@@ -1,11 +1,9 @@
 import express from 'express';
 
+import HealthRouter from './routes/health.js';
+
 const app = express();
 
-app.get('/_health', (req, res) => {
-    res.send({
-        "status": "ok"
-    })
-})
+app.use('/_health', HealthRouter);
 
 export default app;
