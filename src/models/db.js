@@ -4,12 +4,21 @@ import logger from './../utils/logger.js'
 import config from '../../config.js';
 
 const logLevel = config.get('logLevel');
+const environment = process.env.NODE_ENV || 'development';
 
-const sequelizeConfig = {
+let sequelizeConfig = {
     dialect: 'sqlite',
     storage: 'database.sqlite',
     logging: logLevel === 'debug',
 };
+
+if (environment === 'test') {
+    sequelizeConfig = {
+      dialect: 'sqlite',
+      storage: ':memory:',
+      logging: false,
+    };
+  }
 
 const sequelize = new Sequelize(sequelizeConfig);
 
