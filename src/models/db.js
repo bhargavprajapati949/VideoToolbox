@@ -13,6 +13,8 @@ async function initDb(){
         logger.info('Connecting to Database...')
         await sequelize.authenticate();
         logger.info('Database connected!');
+        await sequelize.sync({ alter: true });
+        logger.info('Database tables are synchronized!')
     }
     catch(error){
         logger.error('Error connecting to database', error)

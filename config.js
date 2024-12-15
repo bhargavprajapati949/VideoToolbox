@@ -1,11 +1,11 @@
 import convict from 'convict';
 
 const config = convict({
-  port: {
-    doc: 'The port the app runs on',
-    format: 'port',
-    default: 3000,
-    env: 'PORT'
+  jwtSecret: {
+    doc: 'Secret key for JWT token signing',
+    format: String,
+    default: 'defaultSecretKey',
+    env: 'JWT_SECRET',
   },
   logLevel: {
     doc: 'Log level for the application',
@@ -13,6 +13,12 @@ const config = convict({
     default: 'info',
     env: 'LOG_LEVEL'
   },
+  port: {
+    doc: 'The port the app runs on',
+    format: 'port',
+    default: 3000,
+    env: 'PORT'
+  }
 });
 
 config.validate({ allowed: 'strict' });
