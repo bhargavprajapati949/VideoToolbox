@@ -31,6 +31,21 @@ export const trimVideo = (inputPath, outputPath, startTime, endTime) => {
   });
 };
 
+export const mergeVideos = (inputPaths, outputPath) => {
+  return new Promise((resolve, reject) => {
+    const ffmpegCommand = ffmpeg();
+
+    inputPaths.forEach((filePath) => {
+      ffmpegCommand.input(filePath);
+    });
+
+    ffmpegCommand
+      .on('end', () => resolve())
+      .on('error', (err) => reject(new APIError(`Failed to merge videos: ${err.message}`, 500)))
+      .mergeToFile(outputPath);
+  });
+};
+
 export const validateVideoDuration = (duration) => {
   const minDuration = config.get('video.minDuration');
   const maxDuration = config.get('video.maxDuration');

@@ -8,6 +8,7 @@ import APIError from '../utils/APIError.js';
 import {
   getVideoMetadata,
   trimVideo,
+  mergeVideos,
   validateVideoDuration,
   validateTrimTimes,
   deleteVideoFile,
@@ -103,6 +104,52 @@ export const trimVideoController = async (req, res, next) => {
         id: trimmedVideo.video_id,
         size: trimmedVideo.size,
         duration: trimmedVideo.duration,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const mergeVideosController = async (req, res, next) => {
+  try {
+    const { video_ids } = req.body;
+
+    if (!Array.isArray(video_ids) || video_ids.length === 0) {
+      throw new APIError('video_ids must be a non-empty array.', 400);
+    }
+
+    const videos = await Video.findAll({
+      where: { video_id: video_ids },
+    });
+
+    if (videos.length !== video_ids.length) {
+      throw new APIError('Some video_ids are invalid or do not exist.', 404);
+    }
+
+    const inputPaths = videos.map((video) => video.file_path);
+    const totalDuration = videos.reduce((sum, video) => sum + video.duration, 0);
+
+    const outputFileName = `merged_${req.user.user_id}_${Date.now()}.mp4`;
+    const outputFilePath = path.resolve(uploadDirectory, outputFileName);
+
+    await mergeVideos(inputPaths, outputFilePath);
+
+    const mergedVideoStats = await statAsync(outputFilePath);
+
+    const mergedVideo = await Video.create({
+      user_id: req.user.user_id,
+      file_path: outputFilePath,
+      size: mergedVideoStats.size,
+      duration: totalDuration,
+    });
+
+    res.status(201).json({
+      message: 'Video merged successfully.',
+      video: {
+        id: mergedVideo.video_id,
+        size: mergedVideo.size,
+        duration: mergedVideo.duration,
       },
     });
   } catch (error) {
