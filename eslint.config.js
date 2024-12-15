@@ -11,4 +11,10 @@ export default [
     }
   },
   pluginJs.configs.recommended,
+  {
+    files: ["**/*.test.js", "**/*.spec.js"],
+    languageOptions: {
+      globals: globals.jest,
+    }
+  },
 ];
