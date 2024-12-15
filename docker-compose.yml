@@ -1,0 +1,18 @@
+services:
+  video-toolbox:
+    build:
+      context: .
+      dockerfile: DockerFile
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      JWT_SECRET: your_jwt_secret
+      UPLOAD_DIRECTORY: /mnt/videoUploads
+      MAX_VIDEO_SIZE: 50000000
+      MAX_VIDEO_DURATION: 300
+      MIN_VIDEO_DURATION: 5
+      ALLOWED_VIDEO_TYPES: video/mp4,video/x-matroska,video/quicktime
+      MAX_LINK_SHARE_TIME: 86400
+    volumes:
+      - ./uploads:/mnt/videoUploads
