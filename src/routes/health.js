@@ -1,5 +1,7 @@
 import express from 'express';
+
 import { sequelize } from '../models/db.js';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
 
