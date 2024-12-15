@@ -55,6 +55,12 @@ const config = convict({
       default: 'uploads',
       env: 'UPLOAD_DIRECTORY',
     },
+    maxLinkShareTime: {
+      doc: 'Maximum time in seconds for which a link can be shared',
+      format: 'nat',
+      default: 86400, // 24 hours in seconds
+      env: 'MAX_LINK_SHARE_TIME',
+    },
   },
 });
 

@@ -1,9 +1,10 @@
 import path from 'path';
 import fs from 'fs';
+import { v4 as uuidv4 } from 'uuid';
 import { promisify } from 'util';
 
 import config from '../../config.js';
-import { Video } from '../models/index.js';
+import { Video, SharedLink } from '../models/index.js';
 import APIError from '../utils/APIError.js';
 import {
   getVideoMetadata,
@@ -16,6 +17,7 @@ import {
 
 const statAsync = promisify(fs.stat);
 const uploadDirectory = config.get('video.uploadDirectory');
+const maxLinkShareTime = config.get('video.maxLinkShareTime');
 
 export const uploadVideo = async (req, res, next) => {
   try {
@@ -152,6 +154,87 @@ export const mergeVideosController = async (req, res, next) => {
         duration: mergedVideo.duration,
       },
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createSharedLink = async (req, res, next) => {
+  try {
+    const { video_id, expiry_duration } = req.body;
+
+    if (!video_id) {
+      throw new APIError('video_id is required.', 400);
+    }
+
+    const video = await Video.findByPk(video_id);
+    if (!video) {
+      throw new APIError('Video with the given ID does not exist.', 404);
+    }
+
+    const expiryDuration = expiry_duration || maxLinkShareTime;
+    if (expiryDuration > maxLinkShareTime) {
+      throw new APIError(`Expiry time cannot exceed ${maxLinkShareTime} seconds.`, 400);
+    }
+
+    const expiryTime = new Date(Date.now() + expiryDuration * 1000);
+
+    let uniqueLinkId;
+    let isUnique = false;
+    while (!isUnique) {
+      uniqueLinkId = uuidv4();
+      const existingLink = await SharedLink.findOne({ where: { unique_link_id: uniqueLinkId } });
+      isUnique = !existingLink;
+    }
+
+    const sharedLink = await SharedLink.create({
+      video_id,
+      unique_link_id: uniqueLinkId,
+      expiry_time: expiryTime,
+    });
+
+    res.status(201).json({
+      message: 'Shared link created successfully.',
+      link: `${req.protocol}://${req.get('host')}/api/v1.0/video/shared/${uniqueLinkId}`,
+      expiry_time: sharedLink.expiry_time,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const accessSharedLink = async (req, res, next) => {
+  try {
+    const { unique_link_id } = req.params;
+
+    const sharedLink = await SharedLink.findOne({ where: { unique_link_id } });
+    if (!sharedLink) {
+      throw new APIError('Invalid or expired link.', 404);
+    }
+
+    if (new Date() > sharedLink.expiry_time) {
+      throw new APIError('This link has expired.', 403);
+    }
+
+    const video = await Video.findByPk(sharedLink.video_id);
+    if (!video) {
+      throw new APIError('Video not found.', 404);
+    }
+
+    const filePath = path.resolve(video.file_path);
+
+    const action = req.query.action; // `stream` or `download`
+    if (action === 'download') {
+      res.download(filePath, path.basename(filePath));
+    } else {
+      const stat = fs.statSync(filePath);
+      res.writeHead(200, {
+        'Content-Type': 'video/mp4',
+        'Content-Length': stat.size,
+      });
+      const readStream = fs.createReadStream(filePath);
+      readStream.pipe(res);
+    }
   } catch (error) {
     next(error);
   }

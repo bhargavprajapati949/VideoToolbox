@@ -30,7 +30,7 @@ const Video = sequelize.define('Video', {
   },
 }, {
   tableName: 'Videos',
-  timestamps: true
+  timestamps: false
 });
 
 export default Video;
