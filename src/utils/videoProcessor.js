@@ -19,6 +19,18 @@ export const getVideoMetadata = (filePath) => {
   });
 };
 
+export const trimVideo = (inputPath, outputPath, startTime, endTime) => {
+  return new Promise((resolve, reject) => {
+    ffmpeg(inputPath)
+      .setStartTime(startTime)
+      .setDuration(endTime - startTime)
+      .output(outputPath)
+      .on('end', () => resolve())
+      .on('error', (err) => reject(new APIError(`Failed to trim video: ${err.message}`, 500)))
+      .run();
+  });
+};
+
 export const validateVideoDuration = (duration) => {
   const minDuration = config.get('video.minDuration');
   const maxDuration = config.get('video.maxDuration');
@@ -28,6 +40,12 @@ export const validateVideoDuration = (duration) => {
       `Video duration must be between ${minDuration} and ${maxDuration} seconds.`,
       400
     );
+  }
+};
+
+export const validateTrimTimes = (startTime, endTime, duration) => {
+  if (startTime < 0 || endTime > duration || startTime >= endTime) {
+    throw new APIError('Invalid start_time or end_time for trimming.', 400);
   }
 };
 

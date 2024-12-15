@@ -9,7 +9,7 @@ const uploadDirectory = config.get('video.uploadDirectory');
 const maxSize = config.get('video.maxSize');
 
 const storage = multer.diskStorage({
-  destination: uploadDirectory,
+  destination: path.resolve(uploadDirectory),
   filename: (req, file, cb) => {
     const uniqueFileName = req.user.user_id +  "_" + Date.now();
     cb(null, uniqueFileName + path.extname(file.originalname));
