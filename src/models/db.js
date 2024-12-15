@@ -1,4 +1,5 @@
 import { Sequelize } from 'sequelize';
+import logger from './../utils/logger.js'
 
 const config = {
     dialect: 'sqlite',
@@ -9,11 +10,12 @@ const sequelize = new Sequelize(config);
 
 async function initDb(){
     try{
+        logger.info('Connecting to Database...')
         await sequelize.authenticate();
-        console.log('Database connected!');
+        logger.info('Database connected!');
     }
     catch(error){
-        console.log('Error connecting to database')
+        logger.error('Error connecting to database', error)
         throw error;
     }
 }
