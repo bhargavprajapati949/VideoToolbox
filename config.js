@@ -18,7 +18,44 @@ const config = convict({
     format: 'port',
     default: 3000,
     env: 'PORT'
-  }
+  },
+  video: {
+    maxSize: {
+      doc: 'Maximum video size in bytes',
+      format: 'nat',
+      default: 52428800, // 50 MB
+      env: 'MAX_VIDEO_SIZE',
+    },
+    minDuration: {
+      doc: 'Minimum video duration in seconds',
+      format: 'nat',
+      default: 5, // 1 second
+      env: 'MIN_VIDEO_DURATION',
+    },
+    maxDuration: {
+      doc: 'Maximum video duration in seconds',
+      format: 'nat',
+      default: 300, // 5 minutes
+      env: 'MAX_VIDEO_DURATION',
+    },
+    allowedTypes: {
+      doc: 'Allowed video file types',
+      format: Array,
+      default: [
+        'video/mp4',
+        'video/x-matroska', // .mkv
+        'video/quicktime', // .mov
+        'video/x-msvideo', // .avi
+      ],
+      env: 'ALLOWED_VIDEO_TYPES',
+    },
+    uploadDirectory: {
+      doc: 'Directory for storing uploaded videos',
+      format: String,
+      default: 'uploads',
+      env: 'UPLOAD_DIRECTORY',
+    },
+  },
 });
 
 config.validate({ allowed: 'strict' });

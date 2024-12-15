@@ -1,11 +1,12 @@
 import jwt from 'jsonwebtoken';
-
 import config from '../../config.js';
 import APIError from '../utils/APIError.js';
+import { User } from '../models/index.js';
+import logger from '../utils/logger.js';
 
-const jwtSecret = config.get('jwtSecret')
+const jwtSecret = config.get('jwtSecret');
 
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
   try {
     // Get the token from the Authorization header
     const authHeader = req.headers.authorization;
@@ -16,16 +17,31 @@ const authMiddleware = (req, res, next) => {
     const token = authHeader.split(' ')[1];
 
     // Verify the token
-    const decoded = jwt.verify(token, jwtSecret);
-    req.user = decoded;
+    let decoded;
+    try {
+      decoded = jwt.verify(token, jwtSecret);
+    } catch (error) {
+      if (error.name === 'JsonWebTokenError') {
+        throw new APIError('Invalid or expired auth token', 401);
+      } else if (error.name === 'TokenExpiredError') {
+        throw new APIError('Authorization token expired', 401);
+      } else {
+        throw new APIError('Authorization token verification failed', 401);
+      }
+    }
+
+    // Check if the user exists in the database
+    const user = await User.findByPk(decoded.user_id);
+    if (!user) {
+      throw new APIError('User does not exist', 401);
+    }
+
+    req.user = { user_id: user.user_id, email: user.email };
 
     next();
   } catch (error) {
-    if (error.name === 'JsonWebTokenError') {
-      next(new APIError('Invalid or expired token', 401));
-    } else {
-      next(error);
-    }
+    logger.error(`Auth Middleware Error: ${error}`);
+    next(error);
   }
 };
 
